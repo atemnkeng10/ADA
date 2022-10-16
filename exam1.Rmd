@@ -1,0 +1,58 @@
+---
+title: "Titanic"
+author: "Confidence Atemnkeng Alemajo"
+date: "10/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse) # Loading libraries
+library(haven)
+library(readr)
+```
+
+a) importing the dataset
+ 
+```{r}
+# Importing titanic dataset
+titanic<- read_csv('https://raw.githubusercontent.com/kijohnson/Data/main/titanic.csv') 
+# Looking at the variables in the dataset
+view(titanic)
+# Looking at the structure of the dataset
+sapply(titanic, typeof)
+```
+
+
+```{r}
+# Looking for the class for age and passenger class variable
+class(titanic$Age)
+class(titanic$Pclass)
+
+# Creating a new dataframe and converting passenger class from a numeric to a factor variable.
+titan.clean<-titanic %>% 
+  mutate(paclass=factor(Pclass,
+                        levels = c(1,2,3),
+                        labels = c('First class','Second class','Third class'))) %>% 
+  select(-Pclass)  # Deleting the previous passenger class column
+
+# Checking the class to make sure it is now a factor variable
+str(titan.clean$paclass)
+
+```
+
+
+b) Determine median age by passenger class
+```{r}
+mean(titan.clean[which(titan.clean$paclass=='First class'),]$Age, na.rm=TRUE)
+
+mean(titan.clean[which(titan.clean$paclass=='Second class'),]$Age, na.rm=TRUE)
+
+mean(titan.clean[which(titan.clean$paclass=='Third class'),]$Age, na.rm=TRUE)
+```
+
+c) A plot that shows medians, spread of data, and outliers for the continuous variable age according to passenger class. 
+```{r}
+ggplot(data=titan.clean, aes(paclass,Age))+
+  geom_boxplot()
+```
+
