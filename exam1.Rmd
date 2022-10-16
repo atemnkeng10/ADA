@@ -9,6 +9,7 @@ output: html_document
 library(tidyverse) # Loading libraries
 library(haven)
 library(readr)
+library(table1)
 ```
 
 a) importing the dataset
@@ -55,4 +56,12 @@ c) A plot that shows medians, spread of data, and outliers for the continuous va
 ggplot(data=titan.clean, aes(paclass,Age))+
   geom_boxplot()
 ```
+
+add code to determine the percentage of males and females by class.
+
+```{r}
+table1(~Sex|paclass, data=titan.clean)
+```
+
+
 
