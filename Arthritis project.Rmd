@@ -1,0 +1,294 @@
+---
+title: "Biostat Project"
+author: "Confidence Atemnkeng Alemajo"
+date: "12/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE, eval=FALSE}
+pacman::p_load(haven,tidyverse,table1)
+```
+
+```{r}
+proj<- read_xpt('/Users/atemalem/Desktop/Courses/Fall 2022/Capstone/LLCP2021.XPT ')
+```
+
+
+```{r}
+arthritis<-proj %>% 
+   select(`_AGE_G`,`_SEX`,`_IMPRACE`,MARITAL,`_EDUCAG`,`_TOTINDA`,EMPLOY1,HAVARTH5,ARTHEXER,ARTHEDU,LMTJOIN3,JOINPAI2)
+names(arthritis)<-c('Age','Sex','Race','Marital','Edu','phys','employ','Arthritis','doc_rec','arthedu','jntlmt','pain')
+```
+
+
+
+```{r}
+arthritis<- arthritis %>% 
+   mutate(Marital=recode_factor(Marital,
+                               '1'= 'Married',
+                               '2'= 'Divorced',
+                               '3'= 'Widowed',
+                               '4'= 'Separated',
+                               '5'= 'Never married',
+                               '6'= 'A member of an unmarried couple',
+                               '9'= NA_character_)) %>% 
+  mutate(phys=recode_factor(phys,
+                              '1'='Had physical activity or exercise',
+                              '2'='No physical activity or exercise in last 30 days')) %>% 
+  mutate(employ=recode_factor(employ,
+                              '1'='employed',
+                              '2'='employed',
+                              '3'='unemployed',
+                              '4'='unemployed',
+                              '5'='unemployed',
+                              '6'='unemployed',
+                              '7'='unemployed',
+                              '8'='unemployed',
+                              '9'=NA_character_)) %>% 
+   mutate(Age=recode_factor(Age,
+                                '1'= 'Age 18 to 24',
+                                '2'= 'Age 25 to 34',
+                                '3'= 'Age 35 to 44',  
+                                '4'= 'Age 45 to 54',
+                                '5'= 'Age 55 to 64', 
+                                '6'= 'Age 65 or older')) %>% 
+  mutate(Sex=recode_factor(Sex,
+                           '1'='male',
+                           '2'='female')) %>% 
+  mutate(Race=recode_factor(Race,
+                            '1'= 'White-Non-Hispanic',
+                            '2'= 'Black-Non-Hispanic',
+                            '3'= 'Asian, Non-Hispanic',
+                            '4'= 'American Indian/Alaskan Native, Non-hispanic',
+                            '5'= 'Hispanic',
+                            '6'= 'Other race,Non-Hispanic')) %>% 
+   mutate(Edu=recode_factor(Edu,
+                                 '1'= 'Did not graduate High School',
+                                 '2'= 'Graduated High School',
+                                 '3'= 'Attended College or Technical School',
+                                 '4'= 'Graduated from College or Tech.School',
+                                 '9'= NA_character_)) %>% 
+  mutate(Arthritis=recode_factor(Arthritis,
+                                 '1'= 'Yes',
+                                '2'= 'No',
+                                '7'= NA_character_,
+                                '9'= NA_character_)) %>%
+  mutate(doc_rec=recode_factor(doc_rec,
+                               '1'= 'Yes',
+                                '2'= 'No',
+                                '7'= NA_character_,
+                                '9'= NA_character_)) %>%
+  mutate(arthedu=recode_factor(arthedu,
+                               '1'= 'Yes',
+                                '2'= 'No',
+                                '7'= NA_character_,
+                                '9'= NA_character_)) %>%
+  mutate(jntlmt=recode_factor(jntlmt,
+                              '1'= 'Yes',
+                                '2'= 'No',
+                                '7'= NA_character_,
+                                '9'= NA_character_)) %>% 
+  mutate(pain=na_if(pain,77)) %>% 
+  mutate(pain=na_if(pain,99)) %>% 
+  mutate(pain_severity= cut(pain, breaks=c(0,4,7,11), labels=c('Mild','Moderate','Severe'), include.lowest=TRUE, right=FALSE))
+
+table1(~., data=arthritis)
+```
+
+
+
+
+
+```{r}
+arth.clean<-arthritis %>% 
+  filter(Arthritis=='Yes') %>% 
+  mutate(Age=case_when(Age=='Age 18 to 24'~'18-64 years',
+                       Age=='Age 25 to 34'~'18-64 years',
+                       Age=='Age 35 to 44'~'18-64 years',
+                       Age=='Age 45 to 54'~'18-64 years',
+                       Age=='Age 55 to 64'~'18-64 years',
+                       Age=='Age 65 or older'~'65 years and older')) %>% 
+  mutate(Marital=case_when(Marital=='divorced'~'Single',
+                           Marital=='Widowed'~'Single',
+                           Marital=='Separated'~'Single',
+                           Marital=='Never married'~'Single',
+                           Marital=='A member of an unmarried couple'~'Single',
+                           Marital=='Married'~'Married')) %>% 
+  mutate(Edu=case_when(Edu=='Did not graduate High School'~'Did not/Graduated from high school',
+                       Edu=='Graduated High School'~'Did not/Graduated from high school',
+                       Edu=='Attended College or Technical School'~'Attended/Graduated from College or Technical school',
+                       Edu=='Graduated from College or Tech.School'~'Attended/Graduated from College or Technical school')) %>% 
+  mutate(Race=case_when(Race=='White-Non-Hispanic'~'White-Non-Hispanic',
+                        Race=='Black-Non-Hispanic'~'Black-Non-Hispanic',
+                        Race=='Asian, Non-Hispanic'~'Other race,Non-Hispanic',
+                        Race=='American Indian/Alaskan Native, Non-hispanic'~'Other race,Non-Hispanic',
+                        Race=='Other race,Non-Hispanic'~'Other race,Non-Hispanic',
+                        Race=='Hispanic'~'Hispanic')) %>% 
+  drop_na()
+
+```
+
+
+# Demographic characteristics of Participants
+```{r}
+library(gtsummary)
+gt_table<-tbl_summary(
+  arth.clean,
+   label = list(Age~"Age(years)",
+                Sex~ "Sex",
+                Race~ "Race/Ethnicity",
+                Marital~"Marital status",
+                Edu ~"Level of education",
+                employ~"Employment status",
+                  jntlmt~"Limitation due to joint symptoms"),
+  type =all_dichotomous()~'categorical',
+  digits = list(all_categorical() ~ c(0, 1)),  # Number of decimal places for percentages
+  missing = 'no',
+  include = c(Age,Sex,Race,Marital,Edu,employ,jntlmt) ) %>% 
+    bold_labels() %>% 
+    modify_caption('**Table1: Demographic Characteristics of Adults Aged 18 years and older with Arthritis in the United States-2021 (N=111212) \ Behavioral risk factor surveillance system data 2021**') 
+
+as_gt(gt_table)
+
+```
+ 
+
+
+```{r}
+
+arth.clean<-arth.clean %>% 
+        mutate(pain_severity=factor(pain_severity, 
+                             levels = c("Mild", "Moderate", "Severe")),
+        doc_rec= factor(doc_rec, 
+                        levels= c("No", "Yes")),
+        arthedu= factor(arthedu, 
+                        levels =c("No", "Yes")),
+        phys=factor(phys,
+                    levels = c('No physical activity or exercise in last 30 days','Had physical activity or exercise')))
+
+```
+
+
+```{r}
+library(nnet)
+library(lmtest)
+library(car)
+```
+
+
+# pain severity vs doctor suggesting physical activity/exercise(Adjusting for age,sex and race)
+```{r}
+#visualize the relationship
+ggplot(data=arth.clean) + geom_bar(aes(x=pain_severity)) + facet_wrap(~doc_rec) 
+ 
+
+  plot.docpain<-arth.clean %>% 
+    group_by(pain_severity, doc_rec) %>% 
+    count() %>% 
+    group_by(doc_rec) %>% 
+    mutate(percent=100*(n/sum(n))) %>% 
+    ggplot(aes(x=doc_rec,fill=pain_severity, y=percent)) +
+    geom_col(position = 'dodge',
+             color='black')+
+    theme_bw() +
+    scale_y_continuous(breaks = seq(0,100, by=10)) +
+    theme(plot.title = element_text(face = "bold", size = 12),
+          axis.text = element_text(colour = "black", size=12),
+        axis.title.x = element_text(colour="black",size=12),
+        axis.title.y = element_text(colour="black",size=12),
+        legend.text = element_text(color="black", size=12),
+        legend.title = element_text(color="black", size=12),
+          axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x='Doctor/Health professional physical activity recommendations',
+         y= 'Percentage in pain severity groups',
+         fill= 'Arthritis pain severity',
+        title='Participants report of Doctor/Health professional physical activity\
+        recommendations by arthritis pain severity',
+        subtitle= 'Behavioral Risk Factor Surveillance System Data for 2021(N=111,212)',
+                caption = 'BRFSS 2021 data')  
+plot.docpain
+
+table1(~doc_rec+arthedu|pain_severity, arth.clean)
+
+# Model
+arth_model1<-multinom(pain_severity~doc_rec, data=arth.clean)
+broom::tidy(arth_model, exponentiate = TRUE, conf.int = TRUE)
+#Adjust for Age,sex and race
+arth_model2<-multinom(pain_severity~doc_rec +Age+Sex+Race, data=arth.clean)
+broom::tidy(arth_model2, exponentiate = TRUE, conf.int = TRUE)
+
+#compare models
+lrtest(arth_model1,arth_model2)
+
+
+```
+
+
+# Pain severity vs physical activity in the last 30 days (age,sex,race,edu,marital,arthedu)..Employment a collider so we cannot adjust
+```{r}
+# visualization of the relationship
+
+  plot.docphys<-arth.clean %>% 
+    group_by(pain_severity, phys) %>% 
+    count() %>% 
+    group_by(phys) %>% 
+    mutate(percent=100*(n/sum(n))) %>% 
+    ggplot(aes(x=phys,fill=pain_severity, y=percent)) +
+    geom_col(position = 'dodge',
+             color='black')+
+    theme_bw() +
+    scale_y_continuous(breaks = seq(0,100, by=10)) +
+    theme(plot.title = element_text(face = "bold", size = 12),
+          axis.text = element_text(colour = "black", size=12),
+        axis.title.x = element_text(colour="black",size=12),
+        axis.title.y = element_text(colour="black",size=12),
+        legend.text = element_text(color="black", size=12),
+        legend.title = element_text(color="black", size=12),
+          axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x='Physical activity in the last 30 days',
+         y= 'Percentage in pain severity groups',
+         fill= 'Arthritis pain severity',
+        title='Participants report of physical activity in the last 30 days\
+         by arthritis pain severity',
+        subtitle= 'Behavioral Risk Factor Surveillance System Data for 2021(N=111,212)',
+                caption = 'BRFSS 2021 data')
+plot.docphys
+
+
+phys_model1<-multinom(pain_severity~phys, data=arth.clean)
+broom::tidy(phys_model, exponentiate = TRUE, conf.int = TRUE)
+#adjust
+phys_model2<-multinom(pain_severity~phys+Age+Sex+Race+Edu+Marital+arthedu, data=arth.clean)
+broom::tidy(phys_model2, exponentiate = TRUE, conf.int = TRUE)
+# Compare two models 
+lrtest(phys_model1,phys_model2)
+
+
+```
+
+# physical exercise in last 30 days and doctor suggesting physical activity(sex,age,race)
+```{r}
+# visualize relationship
+table1(~doc_rec|phys,data=arth.clean)
+
+phys_suggest1<-glm(phys~doc_rec, data = arth.clean, family=binomial(link = 'logit'))
+broom::tidy(phys_suggest, exponentiate = TRUE, conf.int = TRUE)
+#Ajust
+phys_suggest2<-glm(phys~doc_rec+Sex+Age+Race, data = arth.clean, family=binomial(link = 'logit'))
+broom::tidy(phys_suggest2, exponentiate = TRUE, conf.int = TRUE)
+
+#Compare
+lrtest(phys_suggest1,phys_suggest2)
+
+
+```
+
+
+## Look at assumptions of multicollinearity using the vif function from the car package
+```{r}
+vif(phys_suggest2)
+
+```
+
+
+  
